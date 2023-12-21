@@ -31,6 +31,15 @@ contract Exchange {
 		emit Deposit(_token, msg.sender, _amount, tokens[_token][msg.sender]);
 	}
 
+	function withdrawToken(address _token, uint256 _amount) public {
+		// Transfer tokens to user
+		Token(_token).transfer(msg.sender, _amount);
+		
+		// Update user balance
+
+		// Emit event
+	}
+
 	// Check balances
 	function balanceOf(address _token, address _user)
 		public
