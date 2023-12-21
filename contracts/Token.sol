@@ -55,12 +55,12 @@ contract Token {
 		require(_to != address(0));
 
 		// Deduct tokens from spender
-		balanceOf[_from] = balanceOf[_to] - _value;
+		balanceOf[_from] = balanceOf[_from] - _value;
 		// Credit tokens to receiver
 		balanceOf[_to] = balanceOf[_to] + _value;
 
 		//Emit Event
-		emit Transfer(msg.sender, _to, _value);
+		emit Transfer(_from, _to, _value);
 	}
 
 	function approve(address _spender, uint256 _value) 
@@ -80,9 +80,14 @@ contract Token {
 		returns (bool success)
 	{
 		// check approval
+		require(_value <= allowance[_from][msg.sender]);
+		require(_value <= balanceOf[_from]);
+
+		// Reset allowance
+		allowance[_from][msg.sender] -= _value;
 
 		// spend tokens
-
+		_transfer(_from, _to, _value);
+		return true;
 	}
-
 }
