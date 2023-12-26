@@ -13,11 +13,13 @@ contract Exchange {
 	mapping(uint256 => _Order) public orders;
 	uint256 public orderCount; // 0
 	mapping(uint256 => bool) public orderCancelled; // true or false (boolean / bool)
+	mapping(uint256 => bool) public orderFilled;
 
 	event Deposit(address token, address user, uint256 amount, uint256 balance);
 	event Withdraw(address token, address user, uint256 amount, uint256 balance);
-	event Order (uint256 id, address user, address tokenGet, uint256 amountGet, address tokenGive, uint256 amountGive, uint256 timestamp);
-	event Cancel (uint256 id, address user, address tokenGet, uint256 amountGet, address tokenGive, uint256 amountGive, uint256 timestamp);
+	event Order(uint256 id, address user, address tokenGet, uint256 amountGet, address tokenGive, uint256 amountGive, uint256 timestamp);
+	event Cancel(uint256 id, address user, address tokenGet, uint256 amountGet, address tokenGive, uint256 amountGive, uint256 timestamp);
+	event Trade(uint256 id, address user, address tokenGet, uint256 amountGet, address tokenGive, uint256 amountGive, address creator, uint256 timestamp);
 
 	struct _Order {
 		// Attributes of an order
@@ -86,7 +88,7 @@ contract Exchange {
 		require(balanceOf(_tokenGive, msg.sender) >= _amountGive);
 
 		// Instantiate a new order
-		orderCount += 1;
+		orderCount++;
 		orders[orderCount] = _Order(
 			orderCount, // id
 			msg.sender, // user
@@ -139,6 +141,13 @@ contract Exchange {
 	// EXECUTING ORDERS
 
 	function fillOrder(uint256 _id) public {
+		// 1. Must be valid orderId
+		require(_id <= orderCount && _id > 0, "Orders does not exist!");
+		// 2. Order can't be filled
+		require(!orderFilled[_id]);
+		// 3. Order can't be cancelled
+		require(!orderCancelled[_id]);
+
 		// Fetch order
 		_Order storage _order = orders[_id];
 
@@ -151,6 +160,9 @@ contract Exchange {
 			_order.tokenGive,
 			_order.amountGive
 		);
+
+		// Mark order as filled
+		orderFilled[_order.id] = true;
 	}
 
 	function _trade(
@@ -175,6 +187,17 @@ contract Exchange {
 
 		tokens[_tokenGive][_user] -= _amountGive;
 		tokens[_tokenGive][msg.sender] += _amountGive;
-	}
 
+		// emit trade event
+		emit Trade(
+			_orderId,
+			msg.sender,
+			_tokenGet,
+			_amountGet,
+			_tokenGive,
+			_amountGive,
+			_user,
+			block.timestamp
+		);
+	}
 }
