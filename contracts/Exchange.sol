@@ -135,9 +135,46 @@ contract Exchange {
 	}
 
 
+	// --------------------
+	// EXECUTING ORDERS
 
+	function fillOrder(uint256 _id) public {
+		// Fetch order
+		_Order storage _order = orders[_id];
 
+		// Swapping Tokens (Trading)
+		_trade(
+			_order.id, 
+			_order.user, 
+			_order.tokenGet,
+			_order.amountGet,
+			_order.tokenGive,
+			_order.amountGive
+		);
+	}
 
+	function _trade(
+		uint256 _orderId, 
+		address _user, 
+		address _tokenGet,
+		uint256 _amountGet,
+		address _tokenGive,
+		uint256 _amountGive
+	) internal {
+		// Fee is paid by the user who filled the order (msg.sender)
+		// Fee is deducted from _amountGet
+		uint256 _feeAmount = (_amountGet * feePercent) / 100;
 
+		// Execute the trade
+		// msg.sender is the user who filled the order, while _user is who created the order
+		tokens[_tokenGet][msg.sender] -= (_amountGet + _feeAmount);
+		tokens[_tokenGet][_user] += _amountGet;
+
+		// Charge fees
+		tokens[_tokenGet][feeAccount] += _feeAmount;
+
+		tokens[_tokenGive][_user] -= _amountGive;
+		tokens[_tokenGive][msg.sender] += _amountGive;
+	}
 
 }
